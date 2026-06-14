@@ -26,6 +26,7 @@ export default {
   build: {
     rollupOptions: {
       input: {
+        root: "index.html",
         admin: "admin/index.html",
         ...Object.fromEntries(
           adminRoutes.map((route) => [
