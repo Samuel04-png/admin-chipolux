@@ -128,6 +128,9 @@ export default function AdminApp() {
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    void import("../firebase")
+      .then(({ logoutAdmin }) => logoutAdmin())
+      .catch(() => undefined);
     setSession(null);
     navigateTo("login", true);
   };
@@ -198,24 +201,51 @@ function LoginPage({ onLogin }: { onLogin: (session: AdminSession, remember: boo
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    if (!email.trim() || !password.trim()) {
+    const trimmedEmail = email.trim();
+    const normalizedEmail = trimmedEmail.toLowerCase();
+
+    if (!trimmedEmail || !password.trim()) {
       setError("Email and password are required.");
       return;
     }
 
     setLoading(true);
-    window.setTimeout(() => {
-      // TODO: Replace demo validation with Firebase Auth plus role claims/security rules.
-      if (email.trim().toLowerCase() === demoEmail && password === demoPassword) {
+    try {
+      if (normalizedEmail === demoEmail && password === demoPassword) {
         onLogin(defaultSession, remember);
-      } else {
-        setError("Invalid admin email or password.");
+        return;
       }
+
+      const { getEmployee, loginAdmin } = await import("../firebase");
+      const credential = await loginAdmin(trimmedEmail, password);
+      const employee = await getEmployee(credential.user.uid);
+
+      if (employee && !employee.isActive) {
+        setError("This admin account is inactive. Ask the owner to reactivate it.");
+        return;
+      }
+
+      onLogin(
+        {
+          id: credential.user.uid,
+          fullName:
+            employee?.displayName ||
+            credential.user.displayName ||
+            formatNameFromEmail(credential.user.email || trimmedEmail),
+          email: credential.user.email || trimmedEmail,
+          role: employee?.role || "owner_admin",
+          avatar: credential.user.photoURL || undefined,
+        },
+        remember,
+      );
+    } catch (err) {
+      setError(getLoginErrorMessage(err));
+    } finally {
       setLoading(false);
-    }, 350);
+    }
   };
 
   return (
@@ -297,6 +327,46 @@ function readRouteFromLocation(): AdminRoute {
   const match = window.location.pathname.match(/\/admin\/?([^/]*)/);
   const slug = (match?.[1] || "dashboard").toLowerCase() as AdminRoute;
   return validRoutes.includes(slug) ? slug : "dashboard";
+}
+
+function formatNameFromEmail(email: string) {
+  const localPart = email.split("@")[0] || "Admin User";
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getLoginErrorMessage(err: unknown) {
+  const code = typeof err === "object" && err && "code" in err ? String((err as { code?: unknown }).code) : "";
+  const message = err instanceof Error ? err.message : "";
+
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+      return "Invalid admin email or password.";
+    case "auth/too-many-requests":
+      return "Too many login attempts. Please wait a few minutes and try again.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your connection and try again.";
+    case "auth/operation-not-allowed":
+      return "Email and password login is not enabled in Firebase.";
+    case "auth/unauthorized-domain":
+      return "This domain is not authorized in Firebase Authentication.";
+    case "auth/api-key-not-valid.-please-pass-a-valid-api-key.":
+    case "auth/invalid-api-key":
+      return "Firebase Authentication is not configured correctly for this site.";
+    default:
+      if (code.includes("api-key") || message.toLowerCase().includes("api key")) {
+        return "Firebase Authentication is not configured correctly for this site.";
+      }
+      if (message && !message.startsWith("Firebase:")) {
+        return message;
+      }
+      return "Unable to sign in. Please check the admin email and password.";
+  }
 }
 
 function navigateTo(route: AdminRoute, replace = false) {
