@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.npm-cache/
+*.tsbuildinfo
+*.log
+*-check*.png
+tailwind.config.js
+tailwind.config.d.ts
+vite.config.js
+vite.config.d.ts
+
+# Keep original full-resolution apartment photos locally only.
+# The website uses optimized copies in public/images/site.
+public/images/MKS_*.jpg
+public/images/MKS_*.jpeg
+public/images/MKS_*.png

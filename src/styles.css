@@ -1,0 +1,849 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: "Manrope", system-ui, sans-serif;
+    background: #fbf6ea;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #fbf6ea 0%, #f7ecd8 48%, #fbf6ea 100%);
+    color: #082b49;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  img {
+    display: block;
+  }
+}
+
+@layer components {
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .eyebrow {
+    @apply text-[0.72rem] font-extrabold uppercase tracking-[0.26em] text-wine;
+  }
+
+  .section-title {
+    @apply max-w-3xl font-display text-4xl font-bold leading-[1.02] text-ink sm:text-5xl;
+  }
+
+  .copy {
+    @apply text-base leading-8 text-ink/70;
+  }
+
+  .copy-large {
+    @apply text-lg leading-9 text-ink/75;
+  }
+
+  .nav-link {
+    @apply text-[0.78rem] font-extrabold uppercase tracking-[0.18em] text-ink/70 transition hover:text-wine focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-wine;
+  }
+
+  .brand-mark {
+    @apply flex h-11 w-14 shrink-0 items-center justify-center rounded bg-white shadow-sm ring-1 ring-sand/70 sm:h-12 sm:w-16;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-light,
+  .btn-gold,
+  .btn-whatsapp {
+    @apply inline-flex min-h-12 max-w-full items-center gap-2 rounded px-5 py-3 text-sm font-extrabold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4;
+  }
+
+  .btn-primary {
+    @apply bg-wine text-white shadow-[0_14px_30px_rgba(143,24,49,0.25)] hover:-translate-y-0.5 hover:bg-[#781329] focus-visible:outline-wine;
+  }
+
+  .btn-secondary {
+    @apply border border-ink/20 bg-white text-ink shadow-sm hover:-translate-y-0.5 hover:border-champagne hover:text-wine focus-visible:outline-champagne;
+  }
+
+  .btn-light {
+    @apply border border-white/40 bg-white/90 text-ink shadow-sm backdrop-blur hover:-translate-y-0.5 hover:bg-white focus-visible:outline-white;
+  }
+
+  .btn-gold {
+    @apply bg-champagne text-ink hover:-translate-y-0.5 hover:bg-[#d8b86f] focus-visible:outline-champagne;
+  }
+
+  .btn-whatsapp {
+    @apply bg-[#1f8f54] text-white shadow-[0_14px_30px_rgba(31,143,84,0.26)] hover:-translate-y-0.5 hover:bg-[#187846] focus-visible:outline-[#1f8f54];
+  }
+
+  .icon-link {
+    @apply inline-flex items-center gap-2 text-sm font-bold text-ink/75 transition hover:text-wine;
+  }
+
+  .hero-section {
+    @apply relative isolate overflow-hidden bg-ink;
+  }
+
+  .hero-bg {
+    @apply absolute inset-0 h-full w-full object-cover object-center;
+  }
+
+  .hiring-banner-wrap {
+    @apply relative z-30 pt-[4.55rem];
+  }
+
+  .hiring-banner {
+    @apply relative block overflow-hidden border-y border-champagne/35 bg-ink text-white shadow-[0_18px_48px_rgba(8,43,73,0.24)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-champagne;
+    background:
+      linear-gradient(90deg, rgba(200, 164, 93, 0.18), transparent 22%, transparent 78%, rgba(200, 164, 93, 0.14)),
+      linear-gradient(180deg, #0a3152 0%, #061f35 100%);
+  }
+
+  .hiring-banner::before,
+  .hiring-banner::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 z-10;
+  }
+
+  .hiring-banner::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 46%, rgba(0, 0, 0, 0.18));
+  }
+
+  .hiring-banner::after {
+    background:
+      linear-gradient(90deg, #061f35 0%, rgba(6, 31, 53, 0) 12%, rgba(6, 31, 53, 0) 88%, #061f35 100%),
+      linear-gradient(90deg, transparent 0%, rgba(200, 164, 93, 0.14) 50%, transparent 100%);
+  }
+
+  .hiring-marquee {
+    @apply relative z-20 flex overflow-hidden py-3.5;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  }
+
+  .hiring-marquee-group {
+    @apply flex min-w-max shrink-0 items-center;
+    animation: hiring-marquee 42s linear infinite;
+  }
+
+  .hiring-banner:hover .hiring-marquee-group {
+    animation-duration: 72s;
+  }
+
+  .hiring-marquee-item {
+    @apply inline-flex items-center gap-2 px-4 font-bold text-white/90 sm:px-6;
+    font-size: clamp(0.72rem, 1.4vw, 0.92rem);
+    letter-spacing: 0.08em;
+  }
+
+  .hiring-marquee-item::after {
+    content: "";
+    @apply ml-3 h-1.5 w-1.5 rounded-full bg-champagne shadow-[0_0_0_4px_rgba(200,164,93,0.12)] sm:ml-5;
+  }
+
+  .hiring-marquee-item.is-lead > span {
+    @apply rounded-full border border-champagne/55 bg-champagne/15 px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.22em] text-champagne shadow-[inset_0_1px_0_rgba(255,255,255,0.14)];
+  }
+
+  .hiring-marquee-item.is-cta {
+    @apply text-champagne;
+  }
+
+  .hiring-marquee-item.is-cta > span {
+    @apply border-b border-champagne/60 pb-0.5 font-extrabold;
+  }
+
+  .hiring-marquee-cta-icon {
+    @apply shrink-0 transition duration-300;
+  }
+
+  .hiring-banner:hover .hiring-marquee-cta-icon {
+    transform: translateX(0.24rem);
+  }
+
+  .hero-shade {
+    @apply absolute inset-0;
+    background:
+      linear-gradient(90deg, rgba(4, 18, 31, 0.88) 0%, rgba(7, 31, 49, 0.68) 44%, rgba(7, 31, 49, 0.2) 78%, rgba(7, 31, 49, 0.12) 100%),
+      linear-gradient(180deg, rgba(4, 18, 31, 0.16) 0%, rgba(4, 18, 31, 0.62) 100%);
+  }
+
+  .hero-stat {
+    @apply flex min-h-14 items-center gap-2 rounded border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white shadow-[0_14px_35px_rgba(0,0,0,0.18)] backdrop-blur;
+  }
+
+  .hero-stat svg {
+    @apply shrink-0 text-champagne;
+  }
+
+  .arrival-strip {
+    @apply grid gap-6 rounded bg-ivory p-5 shadow-soft ring-1 ring-white/70 lg:grid-cols-[0.92fr_1fr] lg:items-center lg:p-7;
+  }
+
+  .trust-grid {
+    @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .trust-chip {
+    @apply flex min-h-14 items-center gap-3 rounded border border-sand/80 bg-white px-4 py-3 text-sm font-extrabold text-ink shadow-sm;
+  }
+
+  .trust-chip svg {
+    @apply shrink-0 text-wine;
+  }
+
+  .section-heading {
+    @apply grid gap-6 lg:grid-cols-[0.82fr_1fr] lg:items-end lg:[&>p]:justify-self-end;
+  }
+
+  .arrival-fact {
+    @apply rounded border border-sand/80 bg-white p-4 shadow-sm;
+  }
+
+  .arrival-fact span {
+    @apply block text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-wine;
+  }
+
+  .arrival-fact strong {
+    @apply mt-2 block text-sm leading-6 text-ink;
+  }
+
+  .about-collage {
+    @apply relative min-h-[24rem] sm:min-h-[30rem];
+  }
+
+  .about-main {
+    @apply h-[22rem] w-full rounded object-cover shadow-soft sm:h-[28rem];
+  }
+
+  .about-inset {
+    @apply absolute -bottom-8 right-4 h-40 w-32 rounded object-cover shadow-card ring-4 ring-ivory sm:h-52 sm:w-44 lg:-right-2;
+  }
+
+  .apartment-grid {
+    @apply grid gap-5 md:grid-cols-3;
+  }
+
+  .apartment-card {
+    @apply overflow-hidden rounded bg-white shadow-card ring-1 ring-ink/5 transition hover:-translate-y-1 hover:shadow-soft;
+  }
+
+  .apartment-card img {
+    @apply aspect-[4/3] w-full object-cover;
+  }
+
+  .apartment-card h3 {
+    @apply font-display text-3xl font-bold leading-tight text-ink;
+  }
+
+  .apartment-card p {
+    @apply mt-3 text-sm leading-7 text-ink/70;
+  }
+
+  .cta-strip {
+    @apply flex flex-col items-start justify-between gap-4 rounded bg-ink p-5 text-white shadow-card sm:flex-row sm:items-center;
+  }
+
+  .cta-strip p {
+    @apply text-sm font-bold leading-6 text-white/80;
+  }
+
+  .gallery-grid {
+    @apply grid auto-rows-[19rem] gap-4 md:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .gallery-card {
+    @apply relative min-h-[19rem] overflow-hidden rounded bg-sand shadow-card ring-1 ring-ink/5;
+  }
+
+  .gallery-card img {
+    @apply h-full w-full scale-[1.01] object-cover transition duration-500;
+  }
+
+  .gallery-card:hover img {
+    @apply scale-[1.045];
+  }
+
+  .gallery-overlay {
+    @apply absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(8,43,73,0),rgba(8,43,73,0.9))] px-5 pb-5 pt-24 text-white;
+  }
+
+  .gallery-overlay small {
+    @apply mb-2 block text-[0.64rem] font-extrabold uppercase tracking-[0.24em] text-champagne;
+  }
+
+  .gallery-overlay span {
+    @apply font-display text-3xl font-bold;
+  }
+
+  .gallery-overlay p {
+    @apply mt-2 max-w-md text-sm leading-6 text-white/80;
+  }
+
+  .sticky-copy {
+    @apply lg:sticky lg:top-28;
+  }
+
+  .amenity-list {
+    @apply grid gap-3;
+  }
+
+  .amenity-grid {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .amenity-card {
+    @apply rounded bg-white p-5 shadow-sm ring-1 ring-sand/70 transition hover:-translate-y-1 hover:shadow-card;
+  }
+
+  .amenity-row {
+    @apply grid grid-cols-[auto_1fr] gap-4 rounded border border-sand/80 bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-card;
+  }
+
+  .amenity-icon {
+    @apply flex h-11 w-11 items-center justify-center rounded bg-mist text-leaf ring-1 ring-leaf/10;
+  }
+
+  .amenity-card .amenity-icon {
+    @apply mb-5 bg-ivory text-wine ring-wine/10;
+  }
+
+  .amenity-card h3 {
+    @apply text-base font-extrabold text-ink;
+  }
+
+  .amenity-card p {
+    @apply mt-2 text-sm leading-6 text-ink/70;
+  }
+
+  .amenity-row h3 {
+    @apply text-base font-extrabold text-ink;
+  }
+
+  .amenity-row p {
+    @apply mt-2 text-sm leading-6 text-ink/70;
+  }
+
+  .rates-panel {
+    @apply relative isolate overflow-hidden bg-ink;
+  }
+
+  .rates-bg {
+    @apply absolute inset-0 h-full w-full object-cover;
+  }
+
+  .rates-shade {
+    @apply absolute inset-0 bg-ink/80;
+  }
+
+  .rate-card {
+    @apply rounded border border-white/10 bg-white/[0.08] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.16)] backdrop-blur;
+  }
+
+  .video-frame {
+    @apply relative overflow-hidden rounded bg-ink shadow-soft ring-1 ring-ink/10;
+  }
+
+  .video-frame video {
+    @apply block aspect-video w-full bg-ink object-cover;
+  }
+
+  .video-badge {
+    @apply absolute left-4 top-4 inline-flex items-center gap-2 rounded bg-white/90 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-ink shadow-sm backdrop-blur;
+  }
+
+  .review-grid {
+    @apply grid gap-5 md:grid-cols-3;
+  }
+
+  .review-card {
+    @apply rounded bg-white p-6 shadow-card ring-1 ring-ink/5;
+  }
+
+  .review-card p {
+    @apply text-base leading-8 text-ink/75;
+  }
+
+  .review-card strong {
+    @apply mt-6 block text-sm font-extrabold uppercase tracking-[0.18em] text-wine;
+  }
+
+  .career-panel {
+    @apply grid gap-8 rounded bg-ink p-5 text-white shadow-soft ring-1 ring-ink/10 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:p-8;
+  }
+
+  .career-panel .section-title {
+    @apply text-white;
+  }
+
+  .career-panel .copy {
+    @apply text-white/75;
+  }
+
+  .career-intro {
+    @apply max-w-2xl;
+  }
+
+  .career-grid {
+    @apply grid gap-4;
+  }
+
+  .career-card {
+    @apply grid grid-cols-[auto_1fr] gap-4 rounded border border-white/10 bg-white/[0.08] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur;
+  }
+
+  .career-card svg {
+    @apply mt-1 shrink-0 text-champagne;
+  }
+
+  .career-card h3 {
+    @apply text-base font-extrabold text-white;
+  }
+
+  .career-card p {
+    @apply mt-2 text-sm leading-6 text-white/70;
+  }
+
+  .career-email-note {
+    @apply mt-4 text-sm font-bold text-white/65;
+  }
+
+  .jobs-header {
+    @apply border-b border-sand/70 bg-ivory/95 shadow-[0_10px_35px_rgba(8,43,73,0.08)] backdrop-blur-xl;
+  }
+
+  .jobs-hero {
+    @apply bg-ink py-14 text-white lg:py-20;
+  }
+
+  .jobs-hero-grid {
+    @apply grid gap-10 lg:grid-cols-[0.8fr_0.62fr] lg:items-center;
+  }
+
+  .jobs-advert-image {
+    @apply overflow-hidden rounded bg-white p-2 shadow-soft ring-1 ring-white/20;
+  }
+
+  .jobs-advert-image img {
+    @apply h-full w-full rounded object-cover;
+  }
+
+  .jobs-fact-grid {
+    @apply mt-8 grid gap-3 sm:grid-cols-3;
+  }
+
+  .jobs-fact {
+    @apply rounded border border-white/10 bg-white/[0.08] p-4 backdrop-blur;
+  }
+
+  .jobs-fact span {
+    @apply block text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-champagne;
+  }
+
+  .jobs-fact strong {
+    @apply mt-2 block text-sm font-extrabold text-white;
+  }
+
+  .job-grid {
+    @apply grid gap-5 lg:grid-cols-2;
+  }
+
+  .job-card {
+    @apply rounded bg-white p-5 shadow-card ring-1 ring-ink/5;
+  }
+
+  .job-card-header {
+    @apply flex flex-col gap-2 border-b border-sand pb-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .job-card h2 {
+    @apply font-display text-3xl font-bold leading-tight text-ink;
+  }
+
+  .job-card .position-count {
+    @apply inline-flex w-fit rounded-full bg-wine/10 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-wine;
+  }
+
+  .job-list {
+    @apply mt-4 grid gap-2 text-sm leading-6 text-ink/70;
+  }
+
+  .job-list li {
+    @apply grid grid-cols-[auto_1fr] gap-2;
+  }
+
+  .job-list svg {
+    @apply mt-1 shrink-0 text-wine;
+  }
+
+  .application-panel {
+    @apply rounded bg-white p-5 shadow-soft ring-1 ring-sand/80 sm:p-7;
+  }
+
+  .application-note {
+    @apply rounded border border-champagne/50 bg-champagne/10 p-4 text-sm font-semibold leading-6 text-ink/75;
+  }
+
+  .file-input-shell {
+    @apply rounded border border-dashed border-sand bg-ivory p-4;
+  }
+
+  .file-input-shell input {
+    @apply mt-3 w-full text-sm font-semibold text-ink file:mr-4 file:rounded file:border-0 file:bg-ink file:px-4 file:py-2 file:text-sm file:font-extrabold file:text-white;
+  }
+
+  .map-wrap {
+    @apply relative overflow-hidden rounded bg-sand shadow-card ring-1 ring-ink/10;
+  }
+
+  .map-wrap iframe {
+    @apply block min-h-[26rem] w-full bg-cream;
+  }
+
+  .map-placeholder {
+    @apply absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(135deg,#f4ead8,#edf0e7)] text-center font-bold text-ink;
+  }
+
+  .map-placeholder svg {
+    @apply text-wine;
+  }
+
+  .location-panel {
+    @apply rounded border border-sand bg-white p-5 shadow-card;
+  }
+
+  .landmark-row {
+    @apply flex items-center gap-2 rounded bg-ivory px-3 py-2 text-sm font-semibold text-ink/75;
+  }
+
+  .landmark-row svg {
+    @apply shrink-0 text-wine;
+  }
+
+  .contact-line {
+    @apply flex items-center gap-3 rounded border border-sand bg-white px-4 py-3 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:text-wine;
+  }
+
+  .contact-line svg {
+    @apply text-wine;
+  }
+
+  .booking-form {
+    @apply rounded bg-white p-5 shadow-soft ring-1 ring-sand/80 sm:p-7;
+  }
+
+  .field span {
+    @apply mb-2 block text-xs font-extrabold uppercase tracking-[0.16em] text-ink/70;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    @apply w-full rounded border border-sand bg-ivory px-4 py-3 text-sm font-semibold text-ink outline-none transition placeholder:text-ink/40 focus:border-champagne focus:bg-white focus:ring-4 focus:ring-champagne/20;
+  }
+
+  .field select {
+    @apply appearance-none;
+  }
+
+  .field textarea {
+    @apply resize-y;
+  }
+
+  .footer-title {
+    @apply text-sm font-extrabold uppercase tracking-[0.18em] text-champagne;
+  }
+
+  .footer-text {
+    @apply mt-3 text-sm leading-6 text-white/70;
+  }
+
+  .footer-link {
+    @apply text-sm font-semibold text-white/70 transition hover:text-champagne;
+  }
+
+  .footer {
+    @apply bg-ink py-10 text-white;
+  }
+
+  .footer-grid {
+    @apply grid gap-8 md:grid-cols-2 xl:grid-cols-[1.15fr_0.95fr_0.75fr_0.85fr];
+  }
+
+  .social-link {
+    @apply inline-flex items-center gap-2 text-sm font-semibold text-white/70 transition hover:text-champagne;
+  }
+
+  .social-icon-badge {
+    @apply flex h-8 w-8 items-center justify-center rounded bg-white/10 text-champagne;
+  }
+
+  .brand-icon {
+    @apply h-5 w-5 shrink-0;
+  }
+
+  .is-facebook .brand-icon {
+    @apply text-[#1877f2];
+  }
+
+  .is-tiktok .brand-icon {
+    @apply text-white;
+  }
+
+  .floating-socials {
+    @apply fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2;
+  }
+
+  .floating-social-link {
+    @apply inline-flex min-h-12 max-w-[15rem] items-center justify-center gap-2 rounded-full border border-white/50 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] shadow-[0_14px_36px_rgba(8,43,73,0.22)] transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4;
+  }
+
+  .floating-social-link svg {
+    @apply shrink-0;
+  }
+
+  .floating-social-link.is-whatsapp {
+    @apply min-h-14 bg-[#1f8f54] text-white hover:bg-[#187846] focus-visible:outline-[#1f8f54];
+  }
+
+  .floating-social-link.is-facebook {
+    @apply bg-white text-ink hover:text-[#1877f2] focus-visible:outline-[#1877f2];
+  }
+
+  .floating-social-link.is-tiktok {
+    @apply bg-ink text-white hover:bg-[#111827] focus-visible:outline-champagne;
+  }
+
+  .floating-social-link .brand-icon {
+    @apply h-6 w-6;
+  }
+}
+
+@keyframes hiring-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 640px) {
+  .hiring-banner-wrap {
+    padding-top: 4.45rem;
+  }
+
+  .hiring-marquee {
+    padding-bottom: 0.72rem;
+    padding-top: 0.72rem;
+  }
+
+  .hiring-marquee-item {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .hiring-marquee-item::after {
+    margin-left: 0.7rem;
+  }
+
+  .hero-bg {
+    object-position: 36% center;
+  }
+
+  .hero-shade {
+    background:
+      linear-gradient(90deg, rgba(4, 18, 31, 0.72) 0%, rgba(7, 31, 49, 0.34) 70%, rgba(7, 31, 49, 0.18) 100%),
+      linear-gradient(180deg, rgba(4, 18, 31, 0.12) 0%, rgba(4, 18, 31, 0.6) 100%);
+  }
+
+  .floating-socials {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .floating-social-link {
+    min-width: 3rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .floating-social-link:not(.is-whatsapp) .floating-social-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .hiring-marquee-group {
+    animation: none !important;
+    transform: none;
+  }
+}
+
+/* ─── 2026 Visual Refresh: public website polish ───────────────────── */
+@layer components {
+  .modern-glass {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 24px 80px rgba(8, 43, 73, 0.12);
+    backdrop-filter: blur(18px);
+  }
+
+  .brand-mark {
+    @apply bg-white/95 shadow-[0_10px_28px_rgba(8,43,73,0.10)] ring-1 ring-ink/10;
+  }
+
+  .nav-link {
+    @apply relative text-ink/70 hover:text-wine;
+  }
+
+  .nav-link::after {
+    content: "";
+    @apply absolute -bottom-2 left-0 h-0.5 w-0 bg-wine transition-all duration-300;
+  }
+
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  .hero-section {
+    min-height: 100svh;
+  }
+
+  .hero-bg {
+    filter: saturate(0.95) contrast(1.04);
+    transform: scale(1.015);
+  }
+
+  .hero-shade {
+    background:
+      radial-gradient(circle at 18% 24%, rgba(201, 149, 74, 0.24), transparent 34%),
+      linear-gradient(90deg, rgba(4, 18, 31, 0.9) 0%, rgba(7, 31, 49, 0.72) 42%, rgba(7, 31, 49, 0.24) 78%, rgba(7, 31, 49, 0.16) 100%),
+      linear-gradient(180deg, rgba(4, 18, 31, 0.05) 0%, rgba(4, 18, 31, 0.72) 100%);
+  }
+
+  .hero-stat {
+    @apply rounded-2xl border-white/20 bg-white/[0.13] shadow-[0_18px_48px_rgba(0,0,0,0.20)];
+  }
+
+  .arrival-strip,
+  .booking-form,
+  .location-panel,
+  .review-card,
+  .application-panel {
+    @apply rounded-3xl border border-white/70 bg-white/90 shadow-[0_24px_70px_rgba(8,43,73,0.10)] ring-1 ring-ink/5;
+  }
+
+  .apartment-card,
+  .amenity-card,
+  .gallery-card,
+  .video-frame,
+  .map-wrap,
+  .job-card {
+    @apply rounded-3xl shadow-[0_18px_55px_rgba(8,43,73,0.10)] ring-1 ring-ink/5;
+  }
+
+  .apartment-card,
+  .amenity-card,
+  .review-card,
+  .job-card {
+    @apply transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_85px_rgba(8,43,73,0.14)];
+  }
+
+  .gallery-card {
+    @apply bg-ink;
+  }
+
+  .gallery-overlay {
+    background:
+      linear-gradient(180deg, rgba(8,43,73,0), rgba(8,43,73,0.92)),
+      linear-gradient(90deg, rgba(8,43,73,0.64), transparent);
+  }
+
+  .section-title {
+    @apply tracking-[-0.045em];
+  }
+
+  .eyebrow {
+    @apply tracking-[0.24em];
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-light,
+  .btn-gold,
+  .btn-whatsapp {
+    @apply rounded-full shadow-none;
+  }
+
+  .btn-whatsapp {
+    @apply bg-[#16884e] hover:bg-[#126f40];
+    box-shadow: 0 18px 40px rgba(22, 136, 78, 0.26);
+  }
+
+  .btn-secondary,
+  .btn-light {
+    @apply border-ink/10;
+  }
+
+  .trust-chip,
+  .contact-line,
+  .landmark-row {
+    @apply rounded-2xl;
+  }
+
+  .amenity-icon {
+    @apply rounded-2xl;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    @apply rounded-2xl bg-white/80;
+  }
+
+  .floating-social-link {
+    @apply rounded-full shadow-[0_20px_54px_rgba(8,43,73,0.22)];
+  }
+}
+
+@media (max-width: 640px) {
+  @layer components {
+    .section-title {
+      @apply text-3xl;
+    }
+
+    .hero-section h1 {
+      font-size: clamp(2.45rem, 15vw, 4rem);
+    }
+  }
+}
