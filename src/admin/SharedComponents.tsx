@@ -138,7 +138,7 @@ export function AdminShell({
 
           <div className="topbar-title">
             <span>{routeLabel(activeRoute)}</span>
-            <small>{firebaseStatus === "linked" ? "Firebase booking feed linked" : firebaseStatus === "checking" ? "Checking booking feed" : "Demo data active"}</small>
+            <small>{firebaseStatus === "linked" ? "Firebase connected" : firebaseStatus === "checking" ? "Checking Firebase" : "Firebase setup needed"}</small>
           </div>
 
           <label className="topbar-search">

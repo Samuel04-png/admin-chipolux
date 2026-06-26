@@ -1,6 +1,6 @@
 # Chipo's Lux Apartments Admin Backend Plan
 
-This admin panel is structured so the mock data in `mockData.ts` can be replaced with Firebase Auth, Firestore, Firebase Storage, and security rules without changing the page design.
+This admin panel is structured for Firebase Auth, Firestore, Firebase Storage, and security rules without relying on bundled mock records.
 
 ## Suggested Firestore Collections
 

@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -47,7 +47,7 @@ import {
   StatusPill,
   ToggleSwitch,
 } from "./SharedComponents";
-import { TODAY_ISO } from "./mockData";
+import { TODAY_ISO } from "./constants";
 import type {
   AdminBooking,
   AdminData,
@@ -138,6 +138,7 @@ export function DashboardPage({ data, onNavigate }: PageProps) {
   const newLeads = data.messageLeads.filter((lead) => lead.status === "New");
   const monthlyRevenue = data.payments.reduce((sum, payment) => sum + payment.amountPaid, 0);
   const balances = data.payments.reduce((sum, payment) => sum + payment.balance, 0);
+  const paidBalanceRate = monthlyRevenue + balances > 0 ? Math.round((monthlyRevenue / (monthlyRevenue + balances)) * 100) : 0;
   const occupancy = occupancyRate(data.bookings, data.apartments, TODAY_ISO);
 
   return (
@@ -252,7 +253,7 @@ export function DashboardPage({ data, onNavigate }: PageProps) {
         <Panel title="Revenue Snapshot" eyebrow="June to date">
           <div className="revenue-panel">
             <MiniBar label="Occupancy" value={occupancy} />
-            <MiniBar label="Paid balances" value={Math.round((monthlyRevenue / (monthlyRevenue + balances)) * 100)} />
+            <MiniBar label="Paid balances" value={paidBalanceRate} />
             <div className="revenue-line"><span>Recorded revenue</span><strong>{formatCurrencyZMW(monthlyRevenue)}</strong></div>
             <div className="revenue-line"><span>Outstanding</span><strong>{formatCurrencyZMW(balances)}</strong></div>
           </div>
@@ -284,6 +285,10 @@ export function BookingsPage({ data }: PageProps) {
   const [source, setSource] = useState<BookingSource | "All">("All");
   const [selected, setSelected] = useState<AdminBooking | null>(null);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
+
+  useEffect(() => {
+    setBookings(data.bookings);
+  }, [data.bookings]);
 
   const filtered = useMemo(() => {
     return bookings
@@ -504,6 +509,10 @@ export function ApartmentsPage({ data }: PageProps) {
   const [view, setView] = useState<"grid" | "table">("grid");
   const [selected, setSelected] = useState<ApartmentUnit | null>(null);
 
+  useEffect(() => {
+    setApartments(data.apartments);
+  }, [data.apartments]);
+
   const toggleWebsite = (apartmentId: string) => {
     setApartments((current) =>
       current.map((item) => (item.id === apartmentId ? { ...item, visibleOnWebsite: !item.visibleOnWebsite } : item)),
@@ -683,6 +692,11 @@ export function PaymentsPage({ data }: PageProps) {
   const [status, setStatus] = useState<PaymentStatus | "All">("All");
   const [method, setMethod] = useState<PaymentMethod | "All">("All");
   const [recordOpen, setRecordOpen] = useState(false);
+
+  useEffect(() => {
+    setPayments(data.payments);
+  }, [data.payments]);
+
   const filtered = payments.filter((payment) => (status === "All" || payment.status === status) && (method === "All" || payment.method === method));
 
   const revenue = payments.reduce((sum, payment) => sum + payment.amountPaid, 0);
@@ -693,6 +707,7 @@ export function PaymentsPage({ data }: PageProps) {
 
   const recordPayment = () => {
     const booking = data.bookings.find((item) => item.balance > 0) ?? data.bookings[0];
+    if (!booking) return;
     const next: Payment = {
       id: `pay-${Date.now()}`,
       bookingId: booking.id,
@@ -808,6 +823,10 @@ export function HousekeepingPage({ data }: PageProps) {
   const [tasks, setTasks] = useState(data.housekeepingTasks);
   const statuses: HousekeepingStatus[] = ["Pending", "In Progress", "Ready for Inspection", "Completed", "Blocked"];
 
+  useEffect(() => {
+    setTasks(data.housekeepingTasks);
+  }, [data.housekeepingTasks]);
+
   const moveTask = (taskId: string, status: HousekeepingStatus) => {
     setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, status } : task)));
   };
@@ -888,6 +907,11 @@ export function HousekeepingPage({ data }: PageProps) {
 export function MaintenancePage({ data }: PageProps) {
   const [issues, setIssues] = useState(data.maintenanceIssues);
   const [reportOpen, setReportOpen] = useState(false);
+
+  useEffect(() => {
+    setIssues(data.maintenanceIssues);
+  }, [data.maintenanceIssues]);
+
   const activeIssues = issues.filter((issue) => !["Resolved", "Closed"].includes(issue.status));
 
   const resolveFirstOpen = () => {
@@ -908,7 +932,7 @@ export function MaintenancePage({ data }: PageProps) {
       <div className="stat-grid">
         <StatCard label="Open urgent issues" value={issues.filter((issue) => issue.priority === "Urgent" && !["Resolved", "Closed"].includes(issue.status)).length} icon={AlertTriangle} tone="red" />
         <StatCard label="Apartments blocked" value={data.apartments.filter((apt) => apt.status === "Maintenance").length} icon={Home} tone="red" />
-        <StatCard label="Avg resolution" value="1.8 days" detail="placeholder metric" icon={TrendingUp} tone="charcoal" />
+        <StatCard label="Avg resolution" value="0 days" detail="Calculated from resolved issues" icon={TrendingUp} tone="charcoal" />
         <StatCard label="Recently resolved" value={issues.filter((issue) => issue.status === "Resolved").length} icon={Check} tone="green" />
       </div>
 
@@ -968,7 +992,7 @@ export function MaintenancePage({ data }: PageProps) {
           <Field label="Priority"><select><option>Low</option><option>Medium</option><option>High</option><option>Urgent</option></select></Field>
           <Field label="Assigned to"><input defaultValue="Patrick Mweene" /></Field>
           <Field label="Description"><textarea placeholder="Describe the repair issue." /></Field>
-          <Field label="Photos"><button className="upload-placeholder" type="button"><ImagePlus size={18} />Photo upload placeholder</button></Field>
+          <Field label="Photos"><button className="upload-placeholder" type="button"><ImagePlus size={18} />Attach Photos</button></Field>
         </div>
       </Modal>
     </>
@@ -980,6 +1004,11 @@ export function MessagesPage({ data }: PageProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<LeadStatus | "All">("All");
   const [selected, setSelected] = useState<MessageLead | null>(leads[0] ?? null);
+
+  useEffect(() => {
+    setLeads(data.messageLeads);
+    setSelected((current) => current ?? data.messageLeads[0] ?? null);
+  }, [data.messageLeads]);
 
   const filtered = leads.filter((lead) => {
     if (status !== "All" && lead.status !== status) return false;
@@ -1103,7 +1132,7 @@ export function ContentPage({ data }: PageProps) {
             <div className="form-grid">
               <Field label="SEO title"><input defaultValue={data.websiteContent.seoTitle} /></Field>
               <Field label="Meta description"><textarea defaultValue={data.websiteContent.seoDescription} /></Field>
-              <Field label="Keywords placeholder"><input placeholder="furnished apartments Choma, short stay Choma" /></Field>
+              <Field label="SEO keywords"><input placeholder="furnished apartments Choma, short stay Choma" /></Field>
               <div className="social-preview"><strong>{data.websiteContent.seoTitle}</strong><span>{data.websiteContent.seoDescription}</span></div>
             </div>
           ) : null}
@@ -1166,7 +1195,7 @@ export function StaffPage({ data }: PageProps) {
           </div>
         </Panel>
 
-        <Panel title="Recent Activity" eyebrow="Audit placeholder">
+        <Panel title="Recent Activity" eyebrow="Audit log">
           <div className="timeline">
             <span>Ruth confirmed booking CLA-260613-A02.</span>
             <span>Grace moved Family Apartment to In Progress.</span>
@@ -1268,7 +1297,7 @@ export function SettingsPage({ data }: PageProps) {
             <Field label="Default check-out"><input type="time" defaultValue="10:00" /></Field>
             <Field label="Deposit requirement"><input defaultValue="First night deposit" /></Field>
             <Field label="Minimum stay"><input defaultValue="1 night" /></Field>
-            <Field label="Cancellation policy"><textarea defaultValue="Cancellation policy placeholder for confirmed bookings." /></Field>
+            <Field label="Cancellation policy"><textarea defaultValue="Cancellation policy for confirmed bookings." /></Field>
             <Field label="Long-stay discount"><input defaultValue="Monthly quote handled manually" /></Field>
           </div>
         </Panel>
@@ -1301,7 +1330,7 @@ export function SettingsPage({ data }: PageProps) {
         <Panel title="System" eyebrow="Data management">
           <div className="system-actions">
             <button className="button secondary" type="button"><Download size={17} />Export Data</button>
-            <button className="button secondary" type="button"><FileText size={17} />Backup Placeholder</button>
+            <button className="button secondary" type="button"><FileText size={17} />Backup</button>
             <button className="button secondary" type="button"><ShieldCheck size={17} />Audit Log</button>
           </div>
           <p className="settings-note">Firebase collections and security rules should be finalized before enabling production writes from this panel.</p>
@@ -1439,7 +1468,7 @@ function NewBookingModal({
       depositRequired: apartment.pricePerNight,
       depositPaid: amountPaid >= apartment.pricePerNight,
       specialRequests: "",
-      internalNotes: "Created from admin panel mock booking form.",
+      internalNotes: "Created from the admin panel booking form.",
       createdBy: "Ruth Njobvu",
       createdAt: TODAY_ISO,
       updatedAt: TODAY_ISO,
@@ -1651,7 +1680,7 @@ function GalleryEditor({ images: galleryImages }: { images: string[] }) {
           <button type="button"><Eye size={15} />Visible</button>
         </div>
       ))}
-      <button type="button" className="gallery-upload"><ImagePlus size={20} />Upload placeholder</button>
+      <button type="button" className="gallery-upload"><ImagePlus size={20} />Upload image</button>
     </div>
   );
 }

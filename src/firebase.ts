@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import {
   getFirestore,
   collection,
@@ -13,46 +14,101 @@ import {
   setDoc,
   getDoc,
   Timestamp,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import {
+  createUserWithEmailAndPassword,
   getAuth,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
 } from "firebase/auth";
-import type { User } from "firebase/auth";
-import type { Employee, Role } from "./admin/types";
+import type { User, UserCredential } from "firebase/auth";
+import type {
+  AdminBooking,
+  AdminData,
+  ApartmentUnit,
+  Employee,
+  Guest,
+  HousekeepingTask,
+  MaintenanceIssue,
+  MessageLead,
+  Payment,
+  ReportMetric,
+  Role,
+  StaffUser,
+  WebsiteContent,
+} from "./admin/types";
 
 export type { User };
 
 const firebaseConfig = {
-  apiKey: "AIzaSy...sc4Y",
-  authDomain: "tailored-manor.firebaseapp.com",
-  projectId: "tailored-manor",
-  storageBucket: "tailored-manor.firebasestorage.app",
-  messagingSenderId: "1012625617073",
-  appId: "1:1012625617073:web:a219d1830ff44bdaa57290",
-  measurementId: "G-DYL0R9BJN3",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
 };
 
-const app = initializeApp(firebaseConfig, "chippolux");
-export const auth = getAuth(app);
-
+type AuthClient = ReturnType<typeof getAuth>;
 type Db = ReturnType<typeof getFirestore>;
 type Collection = ReturnType<typeof collection>;
 
+let appInstance: FirebaseApp | null | undefined;
+let authInstance: AuthClient | null | undefined;
 let dbInstance: Db | null | undefined;
 let warnedFirestoreUnavailable = false;
+
+export function isFirebaseConfigured() {
+  return Boolean(
+    firebaseConfig.apiKey &&
+      firebaseConfig.authDomain &&
+      firebaseConfig.projectId &&
+      firebaseConfig.appId &&
+      !firebaseConfig.apiKey.includes("..."),
+  );
+}
+
+function getFirebaseApp(): FirebaseApp | null {
+  if (appInstance !== undefined) return appInstance;
+  if (!isFirebaseConfigured()) {
+    appInstance = null;
+    return appInstance;
+  }
+
+  try {
+    appInstance = initializeApp(firebaseConfig, "chippolux");
+  } catch {
+    appInstance = null;
+  }
+
+  return appInstance;
+}
+
+function getFirebaseAuth(): AuthClient | null {
+  if (authInstance !== undefined) return authInstance;
+  const app = getFirebaseApp();
+  authInstance = app ? getAuth(app) : null;
+  return authInstance;
+}
 
 function warnFirestoreUnavailable() {
   if (warnedFirestoreUnavailable) return;
   warnedFirestoreUnavailable = true;
-  console.info("Firebase booking feed is offline. The admin panel is using demo data until Firestore is configured.");
+  console.info("Firebase is not configured yet. The admin panel will show empty setup states.");
 }
 
 export function getFirebaseDb(): Db | null {
   if (dbInstance !== undefined) return dbInstance;
+  const app = getFirebaseApp();
+  if (!app) {
+    dbInstance = null;
+    warnFirestoreUnavailable();
+    return dbInstance;
+  }
 
   try {
     dbInstance = getFirestore(app);
@@ -75,13 +131,27 @@ function noopUnsubscribe() {
 }
 
 // Auth
-export const loginAdmin = (email: string, password: string) =>
-  signInWithEmailAndPassword(auth, email, password);
+export const loginAdmin = (email: string, password: string): Promise<UserCredential> => {
+  const auth = getFirebaseAuth();
+  if (!auth) {
+    throw new Error("Firebase is not configured. Add the VITE_FIREBASE_* values before testing admin login.");
+  }
+  return signInWithEmailAndPassword(auth, email, password);
+};
 
-export const logoutAdmin = () => signOut(auth);
+export const logoutAdmin = () => {
+  const auth = getFirebaseAuth();
+  return auth ? signOut(auth) : Promise.resolve();
+};
 
-export const onAuthChange = (cb: (user: User | null) => void) =>
-  onAuthStateChanged(auth, cb);
+export const onAuthChange = (cb: (user: User | null) => void) => {
+  const auth = getFirebaseAuth();
+  if (!auth) {
+    cb(null);
+    return noopUnsubscribe;
+  }
+  return onAuthStateChanged(auth, cb);
+};
 
 // Bookings submitted from the public website
 export interface Booking {
@@ -131,12 +201,130 @@ export const subscribeBookings = (
       cb(list);
     },
     (err) => {
-      console.info("Firebase booking feed could not sync. The admin panel is using demo data.");
+      console.info("Firebase booking feed could not sync.");
       cb([]);
       onError?.(err);
     },
   );
 };
+
+type AdminCollectionConfig<T> = {
+  key: keyof AdminData;
+  name: string;
+  fallback: T[];
+};
+
+const adminCollections: Array<AdminCollectionConfig<unknown>> = [
+  { key: "apartments", name: "chippolux_apartments", fallback: [] },
+  { key: "bookings", name: "chippolux_admin_bookings", fallback: [] },
+  { key: "guests", name: "chippolux_guests", fallback: [] },
+  { key: "payments", name: "chippolux_payments", fallback: [] },
+  { key: "housekeepingTasks", name: "chippolux_housekeeping_tasks", fallback: [] },
+  { key: "maintenanceIssues", name: "chippolux_maintenance_issues", fallback: [] },
+  { key: "messageLeads", name: "chippolux_message_leads", fallback: [] },
+  { key: "staffUsers", name: "chippolux_staff_users", fallback: [] },
+  { key: "reportMetrics", name: "chippolux_report_metrics", fallback: [] },
+];
+
+export const subscribeAdminData = (
+  cb: (data: Partial<AdminData>) => void,
+  onError?: (err: Error) => void,
+) => {
+  const db = getFirebaseDb();
+  if (!db) {
+    cb({
+      apartments: [],
+      bookings: [],
+      guests: [],
+      payments: [],
+      housekeepingTasks: [],
+      maintenanceIssues: [],
+      messageLeads: [],
+      staffUsers: [],
+      reportMetrics: [],
+    });
+    return noopUnsubscribe;
+  }
+
+  const state: Partial<AdminData> = {};
+  const emit = () => cb({ ...state });
+  const unsubs = adminCollections.map((config) =>
+    subscribeAdminCollection(config.name, config.fallback, (items) => {
+      state[config.key] = items as never;
+      emit();
+    }, onError),
+  );
+
+  unsubs.push(
+    onSnapshot(
+      doc(db, "chippolux_settings", "websiteContent"),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          state.websiteContent = normalizeFirestoreData(snapshot.data()) as WebsiteContent;
+          emit();
+        }
+      },
+      (err) => {
+        console.info("Firebase website content could not sync.");
+        onError?.(err);
+      },
+    ),
+  );
+
+  return () => unsubs.forEach((unsubscribe) => unsubscribe());
+};
+
+function subscribeAdminCollection<T>(
+  name: string,
+  fallback: T[],
+  cb: (items: T[]) => void,
+  onError?: (err: Error) => void,
+) {
+  const ref = getCollection(name);
+  if (!ref) {
+    cb(fallback);
+    onError?.(new Error("Firebase Firestore is unavailable."));
+    return noopUnsubscribe;
+  }
+
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      cb(snapshot.docs.map((item) => docToData<T>(item)));
+    },
+    (err) => {
+      console.info(`Firebase collection ${name} could not sync.`);
+      cb(fallback);
+      onError?.(err);
+    },
+  );
+}
+
+function docToData<T>(snapshot: QueryDocumentSnapshot<DocumentData>) {
+  const data = normalizeFirestoreData(snapshot.data()) as Record<string, unknown>;
+  return {
+    id: snapshot.id,
+    ...data,
+  } as T;
+}
+
+function normalizeFirestoreData(value: unknown): unknown {
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeFirestoreData(item));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeFirestoreData(item)]),
+    );
+  }
+
+  return value;
+}
 
 export const updateBookingStatus = async (id: string, status: Booking["status"]) => {
   const bookingsRef = getCollection("chippolux_bookings");
@@ -261,6 +449,8 @@ export const createEmployee = async (data: {
 }) => {
   const employeesRef = getCollection("chippolux_employees");
   if (!employeesRef) throw new Error("Firebase Firestore is unavailable.");
+  const auth = getFirebaseAuth();
+  if (!auth) throw new Error("Firebase Auth is unavailable.");
 
   const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
   const uid = cred.user.uid;

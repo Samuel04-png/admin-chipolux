@@ -48,3 +48,21 @@ Do not point GitHub Pages at `main` / `/root`, because that serves the unbuilt V
 - Careers content: update `careerAreas`, `hiringDetails`, and `jobOpenings` in `src/content.ts`.
 
 No environment variables are required. The booking form opens WhatsApp with the entered details and does not require a backend.
+## Admin Firebase Testing
+
+The admin panel does not ship with mock records or a demo password. Copy `.env.example` to `.env.local`, fill in the Firebase web app values, and enable Email/Password sign-in in Firebase Authentication.
+
+For first access, create a Firebase Auth user and add that email to `VITE_ADMIN_BOOTSTRAP_EMAILS`. After signing in, create a staff profile in the `chippolux_employees` collection and remove the bootstrap email.
+
+Firestore collections used by the admin panel:
+
+- `chippolux_apartments`
+- `chippolux_admin_bookings`
+- `chippolux_guests`
+- `chippolux_payments`
+- `chippolux_housekeeping_tasks`
+- `chippolux_maintenance_issues`
+- `chippolux_message_leads`
+- `chippolux_staff_users`
+- `chippolux_report_metrics`
+- `chippolux_settings/websiteContent`

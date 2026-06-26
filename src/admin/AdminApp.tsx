@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { Booking as WebsiteBooking } from "../firebase";
-import { business, images } from "../content";
+import { amenities, business, directionsLink, galleryItems, images, testimonials as siteTestimonials } from "../content";
 import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "./icons";
 import { AdminShell } from "./SharedComponents";
-import { mockAdminData, TODAY_ISO } from "./mockData";
+import { TODAY_ISO } from "./constants";
 import type { AdminData, AdminRoute, AdminSession, LeadStatus, MessageLead } from "./types";
 import {
   ApartmentsPage,
@@ -22,8 +22,10 @@ import {
 } from "./pages";
 
 const ADMIN_SESSION_KEY = "chipos-lux-admin-session";
-const demoEmail = "admin@chiposluxapartments.com";
-const demoPassword = "password123";
+const bootstrapAdminEmails = String(import.meta.env.VITE_ADMIN_BOOTSTRAP_EMAILS || "")
+  .split(",")
+  .map((email: string) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 const validRoutes: AdminRoute[] = [
   "login",
@@ -42,18 +44,12 @@ const validRoutes: AdminRoute[] = [
   "settings",
 ];
 
-const defaultSession: AdminSession = {
-  id: "demo-owner",
-  fullName: "Chipo Mwanza",
-  email: demoEmail,
-  role: "owner_admin",
-};
-
 export default function AdminApp() {
   const [route, setRoute] = useState<AdminRoute>(() => readRouteFromLocation());
   const [session, setSession] = useState<AdminSession | null>(() => readStoredSession());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [websiteLeads, setWebsiteLeads] = useState<MessageLead[]>([]);
+  const [adminData, setAdminData] = useState<AdminData>(() => createEmptyAdminData());
   const [firebaseStatus, setFirebaseStatus] = useState<"linked" | "offline" | "checking">("checking");
 
   useEffect(() => {
@@ -74,24 +70,38 @@ export default function AdminApp() {
   useEffect(() => {
     if (!session) {
       setWebsiteLeads([]);
+      setAdminData(createEmptyAdminData());
       setFirebaseStatus("offline");
       return;
     }
 
     let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
+    const unsubscribers: Array<() => void> = [];
     setFirebaseStatus("checking");
 
     void import("../firebase")
-      .then(({ subscribeBookings }) => {
+      .then(({ subscribeAdminData, subscribeBookings }) => {
         if (cancelled) return;
-        unsubscribe = subscribeBookings(
+        unsubscribers.push(
+          subscribeAdminData(
+            (partialData) => {
+              setAdminData((current) => ({
+                ...current,
+                ...partialData,
+                websiteContent: partialData.websiteContent ?? current.websiteContent,
+              }));
+              setFirebaseStatus("linked");
+            },
+            () => setFirebaseStatus("offline"),
+          ),
+        );
+        unsubscribers.push(subscribeBookings(
           (bookings) => {
             setWebsiteLeads(bookings.map(mapWebsiteBookingToLead));
             setFirebaseStatus("linked");
           },
           () => setFirebaseStatus("offline"),
-        );
+        ));
       })
       .catch(() => {
         if (!cancelled) setFirebaseStatus("offline");
@@ -99,16 +109,16 @@ export default function AdminApp() {
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [session]);
 
   const data: AdminData = useMemo(
     () => ({
-      ...mockAdminData,
-      messageLeads: mergeLeads(websiteLeads, mockAdminData.messageLeads),
+      ...adminData,
+      messageLeads: mergeLeads(websiteLeads, adminData.messageLeads),
     }),
-    [websiteLeads],
+    [adminData, websiteLeads],
   );
 
   const navigate = (nextRoute: Exclude<AdminRoute, "login">) => {
@@ -193,6 +203,43 @@ function renderRoute(
   }
 }
 
+function createEmptyAdminData(): AdminData {
+  return {
+    apartments: [],
+    bookings: [],
+    guests: [],
+    payments: [],
+    housekeepingTasks: [],
+    maintenanceIssues: [],
+    messageLeads: [],
+    staffUsers: [],
+    websiteContent: {
+      heroTitle: business.name,
+      heroSubtitle: business.tagline,
+      ctaText: "Book now",
+      aboutText: "",
+      amenities: amenities.map((item) => item.title),
+      galleryImages: galleryItems.map((item) => item.image),
+      contactPhone: business.phoneDisplay,
+      whatsappNumber: business.whatsappNumber,
+      email: business.email,
+      location: business.location,
+      mapLink: directionsLink,
+      faqItems: [],
+      testimonials: siteTestimonials.map((item) => ({ ...item, visible: true })),
+      seoTitle: business.name,
+      seoDescription: `${business.name} admin-managed website content.`,
+      promotionalBanner: {
+        text: "",
+        startDate: TODAY_ISO,
+        endDate: TODAY_ISO,
+        active: false,
+      },
+    },
+    reportMetrics: [],
+  };
+}
+
 function LoginPage({ onLogin }: { onLogin: (session: AdminSession, remember: boolean) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -214,17 +261,20 @@ function LoginPage({ onLogin }: { onLogin: (session: AdminSession, remember: boo
 
     setLoading(true);
     try {
-      if (normalizedEmail === demoEmail && password === demoPassword) {
-        onLogin(defaultSession, remember);
+      const { getEmployee, loginAdmin, logoutAdmin } = await import("../firebase");
+      const credential = await loginAdmin(trimmedEmail, password);
+      const employee = await getEmployee(credential.user.uid);
+      const bootstrapAllowed = bootstrapAdminEmails.includes(normalizedEmail);
+
+      if (employee && !employee.isActive) {
+        await logoutAdmin();
+        setError("This admin account is inactive. Ask the owner to reactivate it.");
         return;
       }
 
-      const { getEmployee, loginAdmin } = await import("../firebase");
-      const credential = await loginAdmin(trimmedEmail, password);
-      const employee = await getEmployee(credential.user.uid);
-
-      if (employee && !employee.isActive) {
-        setError("This admin account is inactive. Ask the owner to reactivate it.");
+      if (!employee && !bootstrapAllowed) {
+        await logoutAdmin();
+        setError("This Firebase user does not have an admin staff profile yet.");
         return;
       }
 
@@ -278,7 +328,7 @@ function LoginPage({ onLogin }: { onLogin: (session: AdminSession, remember: boo
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="admin@chiposluxapartments.com"
+                  placeholder="admin email"
                   autoComplete="email"
                   type="email"
                 />
@@ -383,7 +433,13 @@ function readStoredSession(): AdminSession | null {
   const raw = localStorage.getItem(ADMIN_SESSION_KEY) ?? sessionStorage.getItem(ADMIN_SESSION_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AdminSession;
+    const session = JSON.parse(raw) as AdminSession;
+    if (session.id.startsWith("demo-")) {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      return null;
+    }
+    return session;
   } catch {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
